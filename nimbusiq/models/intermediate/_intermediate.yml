@@ -1,0 +1,117 @@
+version: 2
+
+models:
+  - name: int_payments_usd
+    description: Payments converted to USD with the currency_rates seed. `amount_usd` is null if a currency has no rate (caught by a test).
+    columns:
+      - name: payment_id
+        description: Unique payment identifier.
+        data_tests: [unique, not_null]
+      - name: customer_id
+        description: Paying customer.
+      - name: amount
+        description: Amount in the original currency.
+      - name: currency
+        description: ISO-4217 currency of `amount`.
+      - name: payment_method
+        description: Payment instrument.
+      - name: payment_date
+        description: Payment date.
+      - name: usd_rate
+        description: Rate used for conversion.
+      - name: amount_usd
+        description: Amount converted to USD, rounded to cents.
+        data_tests: [not_null]
+
+  - name: int_customer_revenue
+    description: Payment totals per customer, in USD.
+    columns:
+      - name: customer_id
+        description: Customer identifier.
+        data_tests: [unique, not_null]
+      - name: total_payments
+        description: Number of payments.
+      - name: total_revenue
+        description: Sum of payments in USD.
+      - name: avg_payment_value
+        description: Average payment in USD.
+
+  - name: int_customer_activity
+    description: Product activity per customer.
+    columns:
+      - name: customer_id
+        description: Customer identifier.
+        data_tests: [unique, not_null]
+      - name: last_activity_date
+        description: Latest event timestamp.
+      - name: total_events
+        description: Number of events.
+      - name: active_days
+        description: Distinct calendar days with at least one event.
+
+  - name: int_feature_adoption
+    description: Adoption and total usage per product feature.
+    columns:
+      - name: feature_name
+        description: Product feature.
+        data_tests: [unique, not_null]
+      - name: unique_users
+        description: Distinct customers who used the feature.
+      - name: total_usage
+        description: Sum of usage counts.
+
+  - name: int_subscription_history
+    description: Subscriptions with a normalised lifecycle status.
+    columns:
+      - name: subscription_id
+        description: Unique subscription identifier.
+        data_tests: [unique, not_null]
+      - name: customer_id
+        description: Owning customer.
+      - name: plan_name
+        description: Plan tier.
+      - name: monthly_price
+        description: List price per month in USD.
+      - name: status
+        description: Raw subscription status.
+      - name: start_date
+        description: Start date.
+      - name: end_date
+        description: End date, if ended.
+      - name: lifecycle_status
+        description: ACTIVE, PAUSED, CHURNED or UNKNOWN.
+        data_tests:
+          - accepted_values:
+              arguments: {values: [ACTIVE, PAUSED, CHURNED]}
+
+  - name: int_support_metrics
+    description: Support ticket counts and resolution time per customer.
+    columns:
+      - name: customer_id
+        description: Customer identifier.
+        data_tests: [unique, not_null]
+      - name: total_tickets
+        description: All tickets.
+      - name: closed_tickets
+        description: Tickets with status Closed.
+      - name: open_tickets
+        description: Tickets with status Open.
+      - name: in_progress_tickets
+        description: Tickets with status In Progress.
+      - name: avg_resolution_hours
+        description: Average hours from creation to resolution (resolved tickets only).
+
+  - name: int_events_incremental
+    description: >
+      Incremental event model that merges by event_id and inserts source events
+      whose IDs have not yet been loaded, including late-arriving events.
+    columns:
+      - name: event_id
+        description: Unique identifier used as the incremental merge key.
+        data_tests: [not_null, unique]
+      - name: customer_id
+        description: Customer that triggered the event.
+      - name: event_type
+        description: Type of product action.
+      - name: event_time
+        description: When the event happened.

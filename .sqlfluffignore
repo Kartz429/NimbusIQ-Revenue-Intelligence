@@ -1,0 +1,5 @@
+nimbusiq/target/
+nimbusiq/dbt_packages/
+# Jinja-heavy files the plain Jinja templater cannot render
+nimbusiq/macros/
+nimbusiq/snapshots/

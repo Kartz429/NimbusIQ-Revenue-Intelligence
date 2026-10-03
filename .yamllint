@@ -1,0 +1,9 @@
+extends: relaxed
+ignore: |
+  nimbusiq/target/
+  nimbusiq/dbt_packages/
+rules:
+  line-length: disable
+  truthy:
+    allowed-values: ["true", "false", "on"]
+  document-start: disable

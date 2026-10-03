@@ -1,0 +1,24 @@
+[project]
+name = "nimbusiq"
+version = "1.1.0"
+description = "NimbusIQ revenue intelligence: CSV -> Airbyte -> Snowflake -> dbt"
+requires-python = ">=3.11"
+readme = "README.md"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["nimbusiq/target", "nimbusiq/dbt_packages"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S"]
+ignore = ["S101", "S311", "S603"]   # asserts in tests, random for fake data, subprocess of our own scripts
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/*" = ["E402"]
+"scripts/validate_datasets.py" = ["E501"]
+"tests/*" = ["E402", "S404"]
+"scripts/generate_all.py" = ["S404"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,20 @@
+version: 2
+
+seeds:
+  - name: currency_rates
+    description: >
+      Static, illustrative FX rates to USD used to normalise multi-currency
+      payments. Replace with a maintained FX feed before using revenue figures
+      for finance reporting.
+    config:
+      meta: {owner: analytics-engineering}
+    columns:
+      - name: currency
+        description: ISO-4217 currency code.
+        data_tests: [unique, not_null]
+      - name: usd_rate
+        description: Multiply an amount in `currency` by this rate to get USD.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 0, inclusive: false}

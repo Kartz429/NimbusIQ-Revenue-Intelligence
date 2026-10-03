@@ -1,0 +1,164 @@
+version: 2
+
+models:
+  - name: dim_customer
+    description: Customer attributes for analytics and reporting. Contains PII (email); restrict access accordingly.
+    config:
+      meta: {owner: analytics-engineering, contains_pii: true}
+    columns:
+      - name: customer_id
+        description: Customer identifier (primary key).
+        data_tests: [unique, not_null]
+      - name: email
+        description: Lower-cased customer email. PII.
+        meta: {pii: true}
+      - name: country
+        description: Upper-cased country name.
+      - name: industry
+        description: Industry vertical.
+      - name: company_size
+        description: Number of employees at the customer company.
+      - name: signup_date
+        description: Signup date.
+
+  - name: dim_plan
+    description: Distinct subscription plan and monthly price combinations.
+    columns:
+      - name: plan_name
+        description: Plan tier (primary key).
+        data_tests: [unique, not_null]
+      - name: monthly_price
+        description: List price per month in USD.
+        data_tests: [not_null]
+
+  - name: fact_revenue
+    description: Payment totals per customer, in USD (converted with the currency_rates seed).
+    columns:
+      - name: customer_id
+        description: Customer associated with the aggregated payments.
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_customer'), field: customer_id}
+      - name: total_revenue
+        description: Sum of payments in USD.
+        data_tests: [not_null]
+      - name: payment_count
+        description: Number of payments.
+      - name: avg_payment
+        description: Average payment in USD.
+
+  - name: fact_usage
+    description: Product event totals and latest activity per customer.
+    columns:
+      - name: customer_id
+        description: Customer associated with the events.
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_customer'), field: customer_id}
+      - name: total_events
+        description: Number of events.
+      - name: last_activity
+        description: Timestamp of the latest event.
+
+  - name: fact_subscription
+    description: One row per subscription with plan, price, status and dates.
+    columns:
+      - name: subscription_id
+        description: Subscription identifier (primary key).
+        data_tests: [unique, not_null]
+      - name: customer_id
+        description: Owning customer.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_customer'), field: customer_id}
+      - name: plan_name
+        description: Plan tier.
+        data_tests:
+          - relationships:
+              arguments: {to: ref('dim_plan'), field: plan_name}
+      - name: monthly_price
+        description: List price per month in USD.
+      - name: status
+        description: ACTIVE, PAUSED or CANCELLED.
+      - name: start_date
+        description: Start date.
+      - name: end_date
+        description: End date, if ended.
+
+  - name: mrr
+    description: Monthly recurring revenue - total monthly price across ACTIVE subscriptions (point-in-time, not a history).
+    columns:
+      - name: mrr
+        description: MRR in USD.
+        data_tests: [not_null]
+
+  - name: arr
+    description: Annual recurring revenue - ACTIVE MRR x 12 (point-in-time).
+    columns:
+      - name: arr
+        description: ARR in USD.
+        data_tests: [not_null]
+
+  - name: arpu
+    description: >
+      Total recorded payment revenue (USD) divided by the number of paying
+      customers. This is lifetime revenue per customer, not a monthly figure.
+    columns:
+      - name: arpu
+        description: Average revenue per paying customer, USD.
+        data_tests: [not_null]
+
+  - name: dau
+    description: Distinct customers with an event on the current date (UTC).
+    columns:
+      - name: dau
+        description: Daily active customers.
+        data_tests: [not_null]
+
+  - name: wau
+    description: Distinct customers with an event in the trailing 7 days.
+    columns:
+      - name: wau
+        description: Weekly active customers.
+        data_tests: [not_null]
+
+  - name: mau
+    description: Distinct customers with an event in the trailing 30 days.
+    columns:
+      - name: mau
+        description: Monthly active customers.
+        data_tests: [not_null]
+
+  - name: churn_rate
+    description: Percentage of subscription records currently CANCELLED.
+    columns:
+      - name: churn_rate
+        description: Churn percentage (0-100).
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 0, max_value: 100}
+
+  - name: ltv
+    description: >
+      Illustrative LTV = ARPU x `ltv_lifetime_months` (default 24, set in
+      dbt_project.yml). Align the definition with finance before reporting.
+    columns:
+      - name: estimated_ltv
+        description: Estimated customer lifetime value, USD.
+        data_tests: [not_null]
+
+  - name: nrr
+    description: >
+      Illustrative NRR for ACTIVE subscriptions using the `nrr_expansion_rate`
+      (default 10%) and `nrr_contraction_rate` (default 5%) assumptions. The
+      source data has no plan-change history, so a measured NRR is not possible.
+    columns:
+      - name: nrr
+        description: Net revenue retention percentage under the stated assumptions.
+        data_tests: [not_null]

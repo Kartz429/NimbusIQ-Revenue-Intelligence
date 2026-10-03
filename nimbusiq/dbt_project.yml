@@ -1,0 +1,51 @@
+name: nimbusiq
+version: "1.1.0"
+config-version: 2
+profile: nimbusiq
+
+require-dbt-version: [">=1.9.0", "<2.0.0"]
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - target
+  - dbt_packages
+
+# Business assumptions live here, not buried in SQL. Override per run with
+#   dbt run --vars '{ltv_lifetime_months: 36}'
+vars:
+  raw_database: NIMBUSIQ
+  raw_schema: RAW
+  ltv_lifetime_months: 24
+  nrr_expansion_rate: 0.10
+  nrr_contraction_rate: 0.05
+
+models:
+  nimbusiq:
+    staging:
+      +materialized: view
+      +schema: staging
+      +tags: ["staging"]
+    intermediate:
+      +materialized: view
+      +schema: intermediate
+      +tags: ["intermediate"]
+    marts:
+      +materialized: table
+      +schema: analytics
+      +copy_grants: true
+      +tags: ["marts"]
+
+seeds:
+  nimbusiq:
+    +schema: staging
+    +tags: ["reference"]
+    currency_rates:
+      +column_types:
+        currency: varchar(3)
+        usd_rate: number(12, 6)

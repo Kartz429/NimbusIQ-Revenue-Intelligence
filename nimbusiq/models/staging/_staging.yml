@@ -1,0 +1,189 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: Cleaned customers. Country upper-cased, email lower-cased and trimmed. Customer name is intentionally not carried forward (PII minimisation).
+    config:
+      meta: {owner: analytics-engineering, contains_pii: true}
+    columns:
+      - name: customer_id
+        description: Unique customer identifier.
+        data_tests: [unique, not_null]
+      - name: country
+        description: Upper-cased country name.
+      - name: email
+        description: Lower-cased customer email. PII.
+        meta: {pii: true}
+      - name: industry
+        description: Customer industry vertical.
+      - name: company_size
+        description: Number of employees at the customer company.
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 1}
+              config: {severity: warn}
+      - name: signup_date
+        description: Date the customer signed up.
+        data_tests: [not_null]
+
+  - name: stg_subscriptions
+    description: Cleaned subscriptions. Status is upper-cased. A customer can hold several subscriptions.
+    config:
+      meta: {owner: analytics-engineering}
+    columns:
+      - name: subscription_id
+        description: Unique subscription identifier.
+        data_tests: [unique, not_null]
+      - name: customer_id
+        description: Owning customer.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('stg_customers'), field: customer_id}
+      - name: plan_name
+        description: Plan tier.
+        data_tests:
+          - accepted_values:
+              arguments: {values: [Free, Starter, Professional, Enterprise]}
+              config: {severity: warn}
+      - name: monthly_price
+        description: List price per month in USD.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 0}
+      - name: status
+        description: ACTIVE, PAUSED or CANCELLED.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments: {values: [ACTIVE, PAUSED, CANCELLED]}
+      - name: start_date
+        description: Subscription start date.
+        data_tests: [not_null]
+      - name: end_date
+        description: Subscription end date. Null while the subscription has not ended.
+
+  - name: stg_payments
+    description: Cleaned payments in the original (payer) currency. Use int_payments_usd for USD-normalised amounts.
+    config:
+      meta: {owner: analytics-engineering}
+    columns:
+      - name: payment_id
+        description: Unique payment identifier.
+        data_tests: [unique, not_null]
+      - name: customer_id
+        description: Paying customer.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('stg_customers'), field: customer_id}
+      - name: amount
+        description: Payment amount in `currency`.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 0, inclusive: false}
+      - name: payment_method
+        description: Payment instrument.
+        data_tests:
+          - accepted_values:
+              arguments: {values: [Credit Card, Debit Card, UPI, PayPal, Bank Transfer]}
+              config: {severity: warn}
+      - name: currency
+        description: ISO-4217 currency code of `amount`.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('currency_rates'), field: currency}
+      - name: payment_date
+        description: Date of the payment.
+        data_tests: [not_null]
+
+  - name: stg_events
+    description: Cleaned product usage events.
+    config:
+      meta: {owner: analytics-engineering}
+    columns:
+      - name: event_id
+        description: Unique event identifier; merge key of the incremental events model.
+        data_tests: [unique, not_null]
+      - name: customer_id
+        description: Customer that triggered the event.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('stg_customers'), field: customer_id}
+      - name: event_type
+        description: Type of product action.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [Login, Create Workspace, Create Project, Invite Member, Create Dashboard, Generate Report, Export Report, API Call]
+              config: {severity: warn}
+      - name: event_time
+        description: When the event happened (UTC, no time zone).
+        data_tests: [not_null]
+
+  - name: stg_tickets
+    description: Cleaned support tickets.
+    config:
+      meta: {owner: analytics-engineering}
+    columns:
+      - name: ticket_id
+        description: Unique ticket identifier.
+        data_tests: [unique, not_null]
+      - name: customer_id
+        description: Customer that raised the ticket.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('stg_customers'), field: customer_id}
+      - name: priority
+        description: Ticket priority.
+        data_tests:
+          - accepted_values:
+              arguments: {values: [Low, Medium, High, Critical]}
+              config: {severity: warn}
+      - name: status
+        description: Ticket workflow status.
+        data_tests:
+          - accepted_values:
+              arguments: {values: [Open, In Progress, Closed]}
+              config: {severity: warn}
+      - name: created_at
+        description: Ticket creation time.
+        data_tests: [not_null]
+      - name: resolved_at
+        description: Resolution time. Null until the ticket is closed.
+
+  - name: stg_feature_usage
+    description: Cleaned daily feature usage counters.
+    config:
+      meta: {owner: analytics-engineering}
+    columns:
+      - name: feature_id
+        description: Unique usage record identifier.
+        data_tests: [unique, not_null]
+      - name: customer_id
+        description: Customer using the feature.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('stg_customers'), field: customer_id}
+      - name: feature_name
+        description: Product feature.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [Dashboard Builder, Reports, API, Automation, Notifications, Analytics, Export, Team Collaboration]
+              config: {severity: warn}
+      - name: usage_count
+        description: Number of uses on `usage_date`.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 0}
+      - name: usage_date
+        description: Day of usage.
+        data_tests: [not_null]

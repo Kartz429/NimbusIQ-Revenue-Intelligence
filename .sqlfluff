@@ -1,0 +1,29 @@
+[sqlfluff]
+dialect = snowflake
+templater = jinja
+max_line_length = 120
+# A deliberately small, low-noise rule set: keyword/identifier casing,
+# aliasing and file hygiene. Widen it as the team agrees on more conventions.
+rules = CP01, CP02, CP03, CP04, CP05, AL01, AL02, AL03, LT12, LT13
+ignore = templating
+
+[sqlfluff:templater:jinja]
+apply_dbt_builtins = True
+
+[sqlfluff:templater:jinja:context]
+target = {"name": "dev", "schema": "dbt_dev", "database": "nimbusiq"}
+
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.functions]
+extended_capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.literals]
+capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.types]
+extended_capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.identifiers]
+extended_capitalisation_policy = lower

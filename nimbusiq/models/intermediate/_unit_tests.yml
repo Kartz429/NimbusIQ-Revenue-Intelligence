@@ -1,0 +1,38 @@
+version: 2
+
+unit_tests:
+  - name: ut_subscription_lifecycle_mapping
+    description: Every raw subscription status maps to the expected lifecycle status.
+    model: int_subscription_history
+    given:
+      - input: ref('stg_subscriptions')
+        rows:
+          - {subscription_id: S1, customer_id: C1, plan_name: Starter, monthly_price: 29, status: ACTIVE, start_date: "2025-01-01", end_date: null}
+          - {subscription_id: S2, customer_id: C2, plan_name: Starter, monthly_price: 29, status: CANCELLED, start_date: "2025-01-01", end_date: "2025-06-01"}
+          - {subscription_id: S3, customer_id: C3, plan_name: Starter, monthly_price: 29, status: PAUSED, start_date: "2025-01-01", end_date: null}
+          - {subscription_id: S4, customer_id: C4, plan_name: Starter, monthly_price: 29, status: WEIRD, start_date: "2025-01-01", end_date: null}
+    expect:
+      rows:
+        - {subscription_id: S1, lifecycle_status: ACTIVE}
+        - {subscription_id: S2, lifecycle_status: CHURNED}
+        - {subscription_id: S3, lifecycle_status: PAUSED}
+        - {subscription_id: S4, lifecycle_status: UNKNOWN}
+
+  - name: ut_payments_converted_to_usd
+    description: Payments are converted with the seed rate; unknown currencies stay null.
+    model: int_payments_usd
+    given:
+      - input: ref('stg_payments')
+        rows:
+          - {payment_id: P1, customer_id: C1, amount: 100.00, currency: EUR, payment_method: UPI, payment_date: "2025-01-01"}
+          - {payment_id: P2, customer_id: C1, amount: 50.00, currency: USD, payment_method: UPI, payment_date: "2025-01-02"}
+          - {payment_id: P3, customer_id: C2, amount: 10.00, currency: XXX, payment_method: UPI, payment_date: "2025-01-03"}
+      - input: ref('currency_rates')
+        rows:
+          - {currency: USD, usd_rate: 1.0}
+          - {currency: EUR, usd_rate: 1.1}
+    expect:
+      rows:
+        - {payment_id: P1, amount_usd: 110.00}
+        - {payment_id: P2, amount_usd: 50.00}
+        - {payment_id: P3, amount_usd: null}

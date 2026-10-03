@@ -1,0 +1,35 @@
+# --- secrets -------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.p8
+*.key
+profiles.local.yml
+
+# --- dbt -----------------------------------------------------------------
+nimbusiq/target/
+nimbusiq/dbt_packages/
+nimbusiq/logs/
+logs/
+.user.yml
+
+# --- python --------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# --- OS / editors --------------------------------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# --- packaging -----------------------------------------------------------
+*.zip

@@ -1,0 +1,14 @@
+.git
+.github
+.venv
+datasets
+docs
+tests
+scripts
+snowflake
+airbyte
+**/target
+**/logs
+**/dbt_packages
+.env*
+*.zip

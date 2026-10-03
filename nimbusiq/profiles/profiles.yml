@@ -1,0 +1,56 @@
+# Credential-free dbt profile: every secret comes from an environment variable.
+# From the nimbusiq/ directory:  export DBT_PROFILES_DIR=profiles
+#
+# Targets
+#   dev  - developer machine, password auth, personal schema prefix (DBT_SCHEMA)
+#   ci   - GitHub Actions pull requests, key-pair auth, throw-away schemas
+#   prod - scheduled deployment, key-pair auth, canonical schemas
+nimbusiq:
+  target: "{{ env_var('DBT_TARGET', 'dev') }}"
+  outputs:
+    dev:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      role: "{{ env_var('SNOWFLAKE_ROLE', 'TRANSFORMER_ROLE') }}"
+      database: "{{ env_var('SNOWFLAKE_DATABASE', 'NIMBUSIQ') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE', 'NIMBUSIQ_WH') }}"
+      schema: "{{ env_var('DBT_SCHEMA', 'DBT_DEV') }}"
+      threads: 4
+      query_tag: dbt_nimbusiq_dev
+      connect_retries: 3
+      connect_timeout: 30
+      client_session_keep_alive: false
+
+    ci:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      private_key: "{{ env_var('SNOWFLAKE_PRIVATE_KEY') }}"
+      private_key_passphrase: "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PASSPHRASE', '') }}"
+      role: "{{ env_var('SNOWFLAKE_ROLE', 'TRANSFORMER_ROLE') }}"
+      database: "{{ env_var('SNOWFLAKE_DATABASE', 'NIMBUSIQ') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE', 'NIMBUSIQ_WH') }}"
+      schema: "{{ env_var('DBT_SCHEMA', 'CI_PR_LOCAL') }}"
+      threads: 4
+      query_tag: dbt_nimbusiq_ci
+      connect_retries: 3
+      connect_timeout: 30
+      client_session_keep_alive: false
+
+    prod:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      private_key: "{{ env_var('SNOWFLAKE_PRIVATE_KEY') }}"
+      private_key_passphrase: "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PASSPHRASE', '') }}"
+      role: "{{ env_var('SNOWFLAKE_ROLE', 'TRANSFORMER_ROLE') }}"
+      database: "{{ env_var('SNOWFLAKE_DATABASE', 'NIMBUSIQ') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE', 'NIMBUSIQ_WH') }}"
+      schema: STAGING
+      threads: 8
+      query_tag: dbt_nimbusiq_prod
+      connect_retries: 3
+      connect_timeout: 30
+      client_session_keep_alive: false
