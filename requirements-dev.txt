@@ -1,6 +1,6 @@
 # Linting / hooks. Installed separately from requirements.txt so tool versions
 # never fight the pinned dbt stack.
 sqlfluff>=3.3,<4
-yamllint>=1.35,<2
+yamllint>=1.38.0,<2
 ruff>=0.16.9,<1
 pre-commit>=4,<5
