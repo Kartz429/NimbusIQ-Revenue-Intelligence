@@ -3,4 +3,4 @@
 sqlfluff>=3.3,<4
 yamllint>=1.35,<2
 ruff>=0.16.9,<1
-pre-commit>=4,<5
+pre-commit>=4.6.2,<5
