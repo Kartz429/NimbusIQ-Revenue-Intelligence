@@ -2,5 +2,5 @@
 # never fight the pinned dbt stack.
 sqlfluff>=3.3,<4
 yamllint>=1.35,<2
-ruff>=0.16.9,<1
+ruff>=0.16.10,<1
 pre-commit>=4,<5
